@@ -1,30 +1,19 @@
-FROM node:18
+FROM node:18 AS build
 
-# cài tool cần thiết
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    unzip \
-    openjdk-17-jdk \
-    && rm -rf /var/lib/apt/lists/*
-
-# cài React Native CLI
-RUN npm install -g react-native-cli
-
-# thư mục app
 WORKDIR /app
 
-# copy package
 COPY package*.json ./
-
-# install dependencies
 RUN npm install
 
-# copy source code
 COPY . .
 
-# mở port metro bundler
-EXPOSE 8081
+RUN npm run build
 
-# start react native
-CMD ["npx", "react-native", "start"]
+FROM nginx:alpine
+
+COPY --from=build /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
+
